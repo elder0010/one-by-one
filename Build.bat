@@ -7,4 +7,5 @@ del %EMU_DIR%\MAIN.TOS /f
 
 %PNGTOPI% data\logo.png data\logo.pi1
 .\bin\vbcc\bin\vasmm68k_mot.exe  main.s -Ftos -o MAIN.TOS
+
 copy .\MAIN.TOS %EMU_DIR%\
