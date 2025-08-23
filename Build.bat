@@ -7,8 +7,8 @@ del main.tos /f
 del %EMU_DIR%\MAIN.TOS /f
 
 %PNGTOPI% data\logo.png data\logo.pi1
-%VASM% main.s -Ftos -o MAIN.TOS
-@echo %VASM% pixel.s -Ftos -o PIXEL.TOS
+@echo %VASM% main.s -Ftos -o MAIN.TOS
+%VASM% pixel.s -Ftos -o PIXEL.TOS
 
-copy .\MAIN.TOS %EMU_DIR%\
-@echo copy .\PIXEL.TOS %EMU_DIR%\
+@echo copy .\MAIN.TOS %EMU_DIR%\
+copy .\PIXEL.TOS %EMU_DIR%\
