@@ -6,7 +6,7 @@ SET PNGTOPI=.\bin\pngtopi1-1.2.0\pngtopi1.exe
 del main.tos /f 
 del %EMU_DIR%\MAIN.TOS /f
 
-%PNGTOPI% data\logo.png data\logo.pi1
+%PNGTOPI% data\logo2.png data\logo2.pi1
 %VASM% main.s -Ftos -o MAIN.TOS
 %VASM% pixel.s -Ftos -o PIXEL.TOS
 
