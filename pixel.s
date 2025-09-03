@@ -44,7 +44,7 @@ clear_loop:
     move.w  #%0000000000000000,4(a0)
     move.w  #%0000000000000001,6(a0)    
 
-    ;advance 8 bytes, move to the next 16 pixels
+    ;advance 8 bytes (4 words), move to the next 16 pixels
     addq.l  #8,a0
 
     move.w  #%1000000000000000,(a0)
