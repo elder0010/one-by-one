@@ -26,6 +26,8 @@ main:
     trap    #14
     addq.l  #2,a7 
 
+    add.w   #70,$ff8240
+
     cmp     #0,font_counter ;check if new character in msg
     bne     has_character   ;if not, get new character 
 
@@ -110,6 +112,9 @@ scroll:
     dbf     d1,scroll   ;do another line 
 
     add.l   #8,font_address ;move 16px forward in font 
+
+    add.w   #-70,$ff8240
+
 space_check:
     cmp.b   #$39,$fffc02   ;space pressed?
     bne     main 
