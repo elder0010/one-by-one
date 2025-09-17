@@ -11,11 +11,11 @@ del %EMU_DIR%\MAIN.TOS /f
 %PNGTOPI% data\charset.png data\charset.pi1
 
 %VASM% main.s -Ftos -o MAIN.TOS
-@echo %VASM% pixel.s -Ftos -o PIXEL.TOS
-%VASM% scroller.s -Ftos -o SCROLLER.TOS
-%VASM% scroller8.s -Ftos -o SCRX.TOS
+REM %VASM% pixel.s -Ftos -o PIXEL.TOS
+REM %VASM% scroller.s -Ftos -o SCROLLER.TOS
+REM %VASM% scroller8.s -Ftos -o SCRX.TOS
+
+%VASM% onebyone.s -Ftos -o ONEBYONE.TOS
 
 copy .\MAIN.TOS %EMU_DIR%\
-copy .\PIXEL.TOS %EMU_DIR%\
-copy .\SCROLLER.TOS %EMU_DIR%\
-copy .\SCRX.TOS %EMU_DIR%\
+copy .\ONEBYONE.TOS %EMU_DIR%\

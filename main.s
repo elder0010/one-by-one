@@ -45,5 +45,5 @@ exit:
 ;---------------------------------------------------------
 ;DATA SECTION
 picture: incbin  data\logo2.pi1
-MUSIC:  incbin  data\CRACKTRO.SND            ; SNDH file to include (this one needs 50Hz replay)
+MUSIC:  incbin  data\ONEBYONE.SND            ; SNDH file to include (this one needs 50Hz replay)
 
