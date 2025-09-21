@@ -65,7 +65,21 @@ vbl:
         ;add.w   #-70,$ff8240
         bsr     MUSIC+8                 ; call music
 
-        add.l  #$a0,$ff8240
+        ;store d0-d7
+        movem.l d0-d7,store_d0d7
+
+;----------------------------------------------------------------
+        ;time check - tick every 50 frames (1 second)
+        move.w  time_frame,d0 
+        dbf     d0,nosecond
+        add.w   #$1,$ff8240
+        move.w  #50,d0
+nosecond:
+        move.w  d0,time_frame
+;----------------------------------------------------------------     
+
+        ;restore d0-d7
+        movem.l store_d0d7,d0-d7
 
         move.l  oldvbl(pc),-(sp)        ; go to old vector (system friendly ;) )
         rts
@@ -133,10 +147,15 @@ draw_loop:
 oldvbl: ds.l    1
 oldusp: ds.l    1
 
+
 old_stack: dc.l     $0
 old_palette: dc.l   $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
 old_screen: dc.l    $0
 old_resolution: dc.w $0
+
+store_d0d7: dc.l   $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
+
+time_frame: dc.w    50
 
 ;................................................................
 picture: incbin  data\logo2.pi1
