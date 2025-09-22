@@ -7,7 +7,7 @@ del main.tos /f
 del scroller.tos /f
 del %EMU_DIR%\MAIN.TOS /f
 
-%PNGTOPI% data\logo2.png data\logo2.pi1
+%PNGTOPI% data\logo_multi.png data\logo_multi.pi1
 %PNGTOPI% data\charset.png data\charset.pi1
 
 %VASM% main.s -Ftos -o MAIN.TOS
