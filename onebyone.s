@@ -25,10 +25,10 @@ W_PALETTE_13: equ PALETTE_BASE+26
 W_PALETTE_14: equ PALETTE_BASE+28
 W_PALETTE_15: equ PALETTE_BASE+30
 
-BORDER_COLOUR_0: equ $776
-BORDER_COLOUR_1: equ $466
-BORDER_COLOUR_2: equ $245
-BORDER_COLOUR_3: equ $046
+BORDER_COLOUR_0: equ $202
+BORDER_COLOUR_1: equ $330
+BORDER_COLOUR_2: equ $044
+BORDER_COLOUR_3: equ $276
 
 
 LOGO_COLOUR_0: equ $256
@@ -53,6 +53,7 @@ LOGO_C2: equ W_PALETTE_12
 
         section text
 ;................................................................
+        ;jsr disable_mouse
         move.l  4(sp),a5                ; address to basepage
         move.l  $0c(a5),d0              ; length of text segment
         add.l   $14(a5),d0              ; length of data segment
@@ -81,20 +82,24 @@ LOGO_C2: equ W_PALETTE_12
 
         jsr draw_img
 
+        jsr write_character
+
         move.l  $70.w,oldvbl            ; store old VBL
         move.l  #vbl,$70.w              ; steal VBL
 
-        bsr     MUSIC+0                 ; init music
+        jsr     MUSIC+0                 ; init music
 
         move.w  #7,-(sp)                ; wait for a key
         trap    #1                      ;
         addq.l  #2,sp                   ;
 
-        bsr     MUSIC+4                 ; de-init music
+        jsr     MUSIC+4                 ; de-init music
 
         move.l  oldvbl,$70.w            ; restore VBL
 
         jsr restore
+
+        ;jsr enable_mouse
 
         move.l  oldusp(pc),-(sp)        ; user mode
         move.w  #$20,-(sp)              ;
@@ -107,7 +112,7 @@ LOGO_C2: equ W_PALETTE_12
 ;................................................................
 vbl:    
         ;add.w   #-70,$ff8240
-        bsr     MUSIC+8                 ; call music
+        jsr     MUSIC+8                 ; call music
 
         ;store d0-d7
         movem.l d0-d7,store_d0d7
@@ -132,7 +137,7 @@ nocycle_border:
 
         move.w  time_colour_cycle_logo,d0 
         dbf     d0,nocycle_logo
-        bsr     cycle_colours_logo
+      ;  bsr     cycle_colours_logo
         move.w  #4,d0 
 nocycle_logo:
         move.w  d0,time_colour_cycle_logo
@@ -294,6 +299,72 @@ f2l:
         clr.w   frame_colour_cycle_logo
         rts
 
+write_character:
+
+        move.w  #2,-(a7)        ;get phybase
+        trap    #14
+        addq.l  #2,a7 
+        move.l  d0,a0          ;put phybase in a0
+
+        move.l  #character,a2   ;points to character
+        move.b  (a2),d0         ;put letter value in d0
+
+
+
+        move.w  #0,d1           ;d1=y=0 
+        move.w  d0,d2           ;d2=x
+
+        mulu    #8,d2 
+        
+        move.l  #charset+34,a3  ;points to charset start
+        
+
+                    
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+
+        rts
+
+disable_mouse:
+        move.l  #mus_off,-(a7) ; pointer to IKBD instruction
+        move.w  #0,-(a7)  ; length of instruction - 1
+        move.w  #25,-(a7)               ; send instruction to IKBD
+        trap    #14
+        addq.l  #8,a7
+
+        rts
+
+enable_mouse:
+        move.l  #mus_on,-(a7) ; pointer to IKBD instruction
+        move.w  #0,-(a7)  ; length of instruction - 1
+        move.w  #25,-(a7)               ; send instruction to IKBD
+        trap    #14
+        addq.l  #8,a7
+
+        rts
+;-----------------------------------------------------------------------
+        section data
+
+mus_off: dc.b    $12
+mus_on: dc.b    $08
+
 oldvbl: ds.l    1
 oldusp: ds.l    1
 
@@ -312,7 +383,14 @@ time_colour_cycle_logo: dc.w 4
 
 frame_colour_cycle_border: dc.w 0
 frame_colour_cycle_logo: dc.w 0
+
+
 ;................................................................
+      
+MUSIC:  incbin  data\ONEBYONE.SND            ; SNDH file to include (this one needs 50Hz replay)
+
 picture: incbin  data\logo_multi.pi1
 
-MUSIC:  incbin  data\ONEBYONE.SND            ; SNDH file to include (this one needs 50Hz replay)
+charset: incbin data\charset_8x8.pi1
+
+character: dc.b 0
