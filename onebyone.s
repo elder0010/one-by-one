@@ -114,6 +114,7 @@ vbl:
         ;add.w   #-70,$ff8240
         jsr     MUSIC+8                 ; call music
 
+        ;jsr     write_character
         ;store d0-d7
         movem.l d0-d7,store_d0d7
 
@@ -305,41 +306,38 @@ write_character:
         trap    #14
         addq.l  #2,a7 
         move.l  d0,a0          ;put phybase in a0
-
-        move.l  #character,a2   ;points to character
-        move.b  (a2),d0         ;put letter value in d0
-
-
-
-        move.w  #0,d1           ;d1=y=0 
-        move.w  d0,d2           ;d2=x
-
-        mulu    #8,d2 
-        
+    
         move.l  #charset+34,a3  ;points to charset start
-        
 
-                    
-        move.b  (a3),(a0)
-        add.l   #160,a3 
-        add.l   #160,a0
-        move.b  (a3),(a0)
-        add.l   #160,a3 
-        add.l   #160,a0
-        move.b  (a3),(a0)
-        add.l   #160,a3 
-        add.l   #160,a0
-        move.b  (a3),(a0)
-        add.l   #160,a3 
-        add.l   #160,a0
-        move.b  (a3),(a0)
-        add.l   #160,a3 
-        add.l   #160,a0
-        move.b  (a3),(a0)
-        add.l   #160,a3 
-        add.l   #160,a0
-        move.b  (a3),(a0)
+        move.l  #font_lookup,a1 
+        move.l  #character,a2 
+        move.l  (a2),d0 ;fetch the actual value of character
+        mulu    #4,d0   ;multiply by 4 (it's a longword)
+        add.l   d0,a1   ;sum the char offset with the font lookup base address
 
+        move.l  (a1),d0 ;now fetch the value in the lookup table
+        add.l   d0,a3   ;add to the font base 
+
+        ;write!
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
         rts
 
 disable_mouse:
@@ -348,7 +346,6 @@ disable_mouse:
         move.w  #25,-(a7)               ; send instruction to IKBD
         trap    #14
         addq.l  #8,a7
-
         rts
 
 enable_mouse:
@@ -357,7 +354,6 @@ enable_mouse:
         move.w  #25,-(a7)               ; send instruction to IKBD
         trap    #14
         addq.l  #8,a7
-
         rts
 ;-----------------------------------------------------------------------
         section data
@@ -384,13 +380,17 @@ time_colour_cycle_logo: dc.w 4
 frame_colour_cycle_border: dc.w 0
 frame_colour_cycle_logo: dc.w 0
 
-
 ;................................................................
-      
+
+
+character: dc.l 3
+
 MUSIC:  incbin  data\ONEBYONE.SND            ; SNDH file to include (this one needs 50Hz replay)
 
 picture: incbin  data\logo_multi.pi1
 
 charset: incbin data\charset_8x8.pi1
 
-character: dc.b 0
+font_lookup: dc.l 00,01,08,09,10,11,18,19,20,21,28,29,30,31,38,39,40,41,48,49,50,51,58,59,60,61,68,69,70,71,78,79,80,81,88,89,90
+
+gino: dc.l 0
