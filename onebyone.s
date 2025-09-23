@@ -25,11 +25,10 @@ W_PALETTE_13: equ PALETTE_BASE+26
 W_PALETTE_14: equ PALETTE_BASE+28
 W_PALETTE_15: equ PALETTE_BASE+30
 
-BORDER_COLOUR_0: equ $202
-BORDER_COLOUR_1: equ $330
-BORDER_COLOUR_2: equ $044
-BORDER_COLOUR_3: equ $276
-
+BORDER_COLOUR_0: equ $245
+BORDER_COLOUR_1: equ $262
+BORDER_COLOUR_2: equ $454
+BORDER_COLOUR_3: equ $447
 
 LOGO_COLOUR_0: equ $256
 LOGO_COLOUR_1: equ $545
@@ -40,10 +39,10 @@ LOGO_COLOUR_2: equ $046
 ;1 - 02
 ;2 - 10
 ;3 - 13
-BORDER_C0: equ W_PALETTE_03
-BORDER_C1: equ W_PALETTE_02
-BORDER_C2: equ W_PALETTE_10
-BORDER_C3: equ W_PALETTE_13 
+BORDER_C0: equ W_PALETTE_05
+BORDER_C1: equ W_PALETTE_07
+BORDER_C2: equ W_PALETTE_08
+BORDER_C3: equ W_PALETTE_11 
 
 LOGO_C0: equ W_PALETTE_07
 LOGO_C1: equ W_PALETTE_11
@@ -226,10 +225,10 @@ cycle_colours_border:
         ;movem.l picture+2,d0-d7 ;put picture palette in d0-d7
         ;movem.l d0-d7,PALETTE_BASE
 
-        move.w  frame_colour_cycle_border,d0
-        addq.w  #1,d0 
-        move.w  d0,frame_colour_cycle_border
-        cmp.w   #1,d0
+        move.b  frame_colour_cycle_border,d0
+        addq.b  #1,d0 
+        move.b  d0,frame_colour_cycle_border
+        cmp.b   #1,d0
         bne     f1
 f0: 
         move.w  #BORDER_COLOUR_0,BORDER_C0
@@ -239,7 +238,7 @@ f0:
 
         rts 
 f1:
-        cmp.w   #2,d0 
+        cmp.b   #2,d0 
         bne     f2
         move.w  #BORDER_COLOUR_1,BORDER_C0
         move.w  #BORDER_COLOUR_2,BORDER_C1 
@@ -247,7 +246,7 @@ f1:
         move.w  #BORDER_COLOUR_0,BORDER_C3
         rts
 f2:
-        cmp.w   #3,d0 
+        cmp.b   #3,d0 
         bne     f3
 
         move.w  #BORDER_COLOUR_2,BORDER_C0
@@ -377,8 +376,8 @@ time_frame: dc.w    50
 time_colour_cycle_border: dc.w 4
 time_colour_cycle_logo: dc.w 4
 
-frame_colour_cycle_border: dc.w 0
-frame_colour_cycle_logo: dc.w 0
+frame_colour_cycle_border: dc.b 0
+frame_colour_cycle_logo: dc.b 0
 
 ;................................................................
 
@@ -393,4 +392,4 @@ charset: incbin data\charset_8x8.pi1
 
 font_lookup: dc.l 00,01,08,09,10,11,18,19,20,21,28,29,30,31,38,39,40,41,48,49,50,51,58,59,60,61,68,69,70,71,78,79,80,81,88,89,90
 
-gino: dc.l 0
+
