@@ -52,7 +52,7 @@ LOGO_C2: equ W_PALETTE_12
 
         section text
 ;................................................................
-        ;jsr disable_mouse
+        jsr disable_mouse
         move.l  4(sp),a5                ; address to basepage
         move.l  $0c(a5),d0              ; length of text segment
         add.l   $14(a5),d0              ; length of data segment
@@ -93,13 +93,10 @@ LOGO_C2: equ W_PALETTE_12
         move.l  addr_second_digit1,a0 
         jsr write_character
         
-
         move.l  $70.w,oldvbl            ; store old VBL
         move.l  #vbl,$70.w              ; steal VBL
 
         jsr     MUSIC+0                 ; init music
-
-
 frame:
         cmp.l   #50*60*3+18*50,global_timect
         beq     exit 
@@ -117,7 +114,7 @@ exit:
 
         jsr restore
 
-        ;jsr enable_mouse
+        jsr enable_mouse
 
         move.l  oldusp(pc),-(sp)        ; user mode
         move.w  #$20,-(sp)              ;
@@ -239,6 +236,13 @@ initialise:
         addq.l  #2,a7 
         move.w  d0,old_resolution
 
+        ;store old video display register
+        move.l  $ff820a,d0 
+        move.l  d0,oldvdr
+
+        and.b   #$fb,d0 
+        move.l  d0,$ff820a
+
         ;set low resolution
         move.w  #0,-(a7)    ;low resolution
         move.l  #-1,-(a7)   ;keep physbase
@@ -252,6 +256,10 @@ restore:
         move.l  #old_palette,a0
         movem.l (a0),d0-d7
         movem.l d0-d7,PALETTE_BASE
+
+        ;restore video display register 
+        move.l  oldvdr,d0 
+        move.l  d0,$ff820a
 
         ;restore old resolution and old screen
         move.w  old_resolution,d0 ;res in d0
@@ -467,6 +475,7 @@ mus_on: dc.b    $08
 oldvbl: ds.l    1
 oldusp: ds.l    1
 
+oldvdr: ds.l    0
 
 old_stack: dc.l     $0
 old_palette: dc.l   $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
