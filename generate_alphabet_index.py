@@ -1,14 +1,18 @@
 res = []
 base = 0
 
+tk = 0
 for i in range(0,37):
-    if (i%2==0):
-        res.append(base)
-    else:
-        res.append(base+1)
-        base += 8
+   
+    res.append(base)
+    
+    res.append(base+1)
 
-str = "dc.b "
+
+    base += 8
+  
+
+strx = "dc.b "
 for v in res:
-    str += "{:02X}".format(v)+","
-print(str)
+    strx += str(v) + ","
+print(strx)

@@ -81,17 +81,36 @@ LOGO_C2: equ W_PALETTE_12
 
         jsr draw_img
 
+        jsr get_time_addresses
+
+        ;init timer to 00:00
+        move.l  addr_minute_digit0,a0 
         jsr write_character
+        move.l  addr_minute_digit1,a0 
+        jsr write_character
+        move.l  addr_second_digit0,a0 
+        jsr write_character
+        move.l  addr_second_digit1,a0 
+        jsr write_character
+        
 
         move.l  $70.w,oldvbl            ; store old VBL
         move.l  #vbl,$70.w              ; steal VBL
 
         jsr     MUSIC+0                 ; init music
 
-        move.w  #7,-(sp)                ; wait for a key
-        trap    #1                      ;
-        addq.l  #2,sp                   ;
 
+frame:
+        cmp.l   #50*60*3+18*50,global_timect
+        beq     exit 
+
+        cmp.b   #$39,$fffc02   ;space pressed?
+        bne     frame         
+        ;move.w  #7,-(sp)                ; wait for a key
+        ;trap    #1                      ;
+        ;addq.l  #2,sp                   ;
+
+exit:
         jsr     MUSIC+4                 ; de-init music
 
         move.l  oldvbl,$70.w            ; restore VBL
@@ -116,17 +135,64 @@ vbl:
         ;jsr     write_character
         ;store d0-d7
         movem.l d0-d7,store_d0d7
+        movem.l a0-a7,store_a0a7
 
 ;----------------------------------------------------------------
         ;time check - tick every 50 frames (1 second)
         move.w  time_frame,d0 
         dbf     d0,nosecond
         ;https://nguillaumin.github.io/perihelion-m68k-tutorials/_on_fading_to_black.html
-      ;  add.w   #$1,$ff8240
-        move.w  #50,d0
+        
+        ;every second increment second_digit_1
+        move.l  elapsed_seconds_digit1,d0 
+        add.l   #1,d0 
+        cmpi.l  #10+26,d0
+        bne noreset_second_digit1
+        move.l  #26,d0
+        addq.l  #1,can_inc_seconds_digit0
+noreset_second_digit1:
+        move.l  d0,character
+        move.l  d0,elapsed_seconds_digit1
+        move.l  addr_second_digit1,a0 
+        jsr write_character
+        move.w  #50,d0 ;50 frames per second
 nosecond:
         move.w  d0,time_frame
 
+        ;every 10 seconds increment second_digit_0
+        move.l  can_inc_seconds_digit0,d0
+        beq     noinc_second_digit0
+        clr.l   can_inc_seconds_digit0
+        move.l  elapsed_seconds_digit0,d0 
+        addi.l   #1,d0 
+        ;;addq.l  #1,elapsed_seconds_digit0
+        cmpi.l  #6+26,d0 
+        bne     noreset_second_digit0
+        addq.l  #1,can_inc_minutes_digit1
+        move.l  #26,d0 
+noreset_second_digit0: 
+        move.l  d0,elapsed_seconds_digit0
+        move.l  d0,character 
+        move.l  addr_second_digit0,a0 
+        jsr     write_character
+noinc_second_digit0:
+
+        ;every 59 seconds increment minute_digit_1 
+        move.l  can_inc_minutes_digit1,d0 
+        beq     no_inc_minute_digit_1
+        clr.l   can_inc_minutes_digit1
+        move.l  elapsed_minutes_digit1,d0 
+        addi.l  #1,d0 
+        cmpi.l  #10+26,d0 
+        bne     noreset_minute_digit1
+        move.l  #26,d0 
+noreset_minute_digit1:
+        move.l  d0,character
+        move.l  d0,elapsed_minutes_digit1
+        move.l  addr_minute_digit1,a0 
+        jsr write_character
+;-----------------------------------------------------------------
+no_inc_minute_digit_1:
         move.w  time_colour_cycle_border,d0 
         dbf     d0,nocycle_border
         bsr     cycle_colours_border
@@ -141,11 +207,16 @@ nocycle_border:
         move.w  #4,d0 
 nocycle_logo:
         move.w  d0,time_colour_cycle_logo
+;----------------------------------------------------------------   
 
-;----------------------------------------------------------------     
+
+      ;; add.l #$a0,$ff8240
+        addi.l  #1,global_timect
+
 
         ;restore d0-d7
         movem.l store_d0d7,d0-d7
+        movem.l store_a0a7,a0-a7
 
         move.l  oldvbl(pc),-(sp)        ; go to old vector (system friendly ;) )
         rts
@@ -299,12 +370,14 @@ f2l:
         clr.w   frame_colour_cycle_logo
         rts
 
-write_character:
 
-        move.w  #2,-(a7)        ;get phybase
-        trap    #14
-        addq.l  #2,a7 
-        move.l  d0,a0          ;put phybase in a0
+
+;a0 = target of the write
+;character = char to write
+write_character:
+        ;move.l  minute_digit0,a0
+
+       ; add.l   #8,a0 
     
         move.l  #charset+34,a3  ;points to charset start
 
@@ -319,25 +392,56 @@ write_character:
 
         ;write!
         move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
         add.l   #160,a3 
         add.l   #160,a0
         move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
         add.l   #160,a3 
         add.l   #160,a0
         move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
         add.l   #160,a3 
         add.l   #160,a0
         move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
         add.l   #160,a3 
         add.l   #160,a0
         move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
         add.l   #160,a3 
         add.l   #160,a0
         move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
         add.l   #160,a3 
         add.l   #160,a0
         move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
+        add.l   #160,a3 
+        add.l   #160,a0
+        move.b  (a3),(a0)
+        move.b  2(a3),2(a0)
         rts
+
+
+get_time_addresses:
+        move.w  #2,-(a7)                ;get phybase
+        trap    #14
+        addq.l  #2,a7 
+        move.l  d0,a0                   ;put phybase in a0
+        add.l   #160*8*23+8*16,a0     ;offset  y 
+
+        move.l  a0,addr_minute_digit0
+        addq.l  #1,a0 
+
+        move.l  a0,addr_minute_digit1
+
+        addq.l  #8,a0 
+        move.l  a0,addr_second_digit0
+
+        addq.l  #7,a0 
+        move.l  a0,addr_second_digit1
+        rts 
 
 disable_mouse:
         move.l  #mus_off,-(a7) ; pointer to IKBD instruction
@@ -370,6 +474,7 @@ old_screen: dc.l    $0
 old_resolution: dc.w $0
 
 store_d0d7: dc.l   $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
+store_a0a7: dc.l   $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0 
 
 time_frame: dc.w    50
 
@@ -381,15 +486,31 @@ frame_colour_cycle_logo: dc.b 0
 
 ;................................................................
 
-
-character: dc.l 3
-
 MUSIC:  incbin  data\ONEBYONE.SND            ; SNDH file to include (this one needs 50Hz replay)
 
 picture: incbin  data\logo_multi.pi1
 
 charset: incbin data\charset_8x8.pi1
 
-font_lookup: dc.l 00,01,08,09,10,11,18,19,20,21,28,29,30,31,38,39,40,41,48,49,50,51,58,59,60,61,68,69,70,71,78,79,80,81,88,89,90
+font_lookup: dc.l 0,1,8,9,16,17,24,25,32,33,40,41,48,49,56,57,64,65,72,73,80,81,88,89,96,97,104,105,112,113,120,121,128,129,136,137,144,145,152,153,160,161,168,169,176,177,184,185,192,193,200,201,208,209,216,217,224,225,232,233,240,241,248,249,256,257,264,265,272,273,280,281,288,289,296,297,304,305,312,313
+
+character:      dc.l 26
+
+addr_minute_digit0:  dc.l    $0
+addr_minute_digit1:  dc.l    $0
+addr_second_digit0:  dc.l    $0
+addr_second_digit1:  dc.l    $0
+
+can_inc_seconds_digit0: dc.l $0
+can_inc_minutes_digit1: dc.l $0
 
 
+elapsed_minutes_digit0:        dc.l   26 
+elapsed_minutes_digit1:        dc.l   26
+
+elapsed_seconds_digit0:        dc.l   26      ;26 is character "0"
+elapsed_seconds_digit1:        dc.l   26      ;26 is character "0"
+
+elapsed_minutes:        dc.l   26
+
+global_timect:          dc.l    0
