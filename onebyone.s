@@ -81,6 +81,8 @@ LOGO_C2: equ W_PALETTE_12
 
         jsr draw_img
 
+        jsr copy_block
+
         jsr get_time_addresses
 
         ;init timer to 00:00
@@ -287,6 +289,7 @@ draw_img:
         move.w #BORDER_COLOUR_3,BORDER_C3
 
         move.l  d0,a0          ;put phybase in a0
+        move.l  d0,base_screen ;store it
         move.l  #picture+34,a1 ;a1 points to picture
 
         move.l  #7999,d0
@@ -378,8 +381,6 @@ f2l:
         clr.w   frame_colour_cycle_logo
         rts
 
-
-
 ;a0 = target of the write
 ;character = char to write
 write_character:
@@ -430,6 +431,45 @@ write_character:
         move.b  (a3),(a0)
         move.b  2(a3),2(a0)
         rts
+
+        ;parameters: d2=x,d1=y (0,0 is top left)
+copy_block:
+        move.l  #character,a0           ; points to character
+        move.l  #charset+34,a1          ; points to pixel start
+
+        move.b  (a0),d0                 ; put letter ascii value in d0
+
+        move.w  #2,d1  
+        move.w  #0,d2 
+        mulu    #8,d2                   ; 8 bytes for each 16x16 block
+        mulu    #16,d1                  ; 16 lines per row
+        mulu    #160,d1               ; 160 bytes per screen line
+
+        move.l  #charset+34,a0          ; put font screen start in a0
+
+        add.l   d2,d1                   ; add x and y value together
+        add.l   d1,a0                   ; a0 points to correct block
+
+        move.l   base_screen,a3 
+        add.l    d1,a3
+
+        ;copy 32x32 block
+        move.l   #32,d0                 ; 19 16 pixel clusters + font part
+copyb:
+        move.w  (a0),(a3)
+        move.w  2(a0),2(a3)
+        move.w  4(a0),4(a3)
+        move.w  6(a0),6(a3)
+
+        move.w  8(a0),8(a3)
+        move.w  10(a0),10(a3)
+        move.w  12(a0),12(a3)
+        move.w  14(a0),14(a3)
+
+        add.l   #160,a3
+        add.l   #160,a0 
+        dbf     d0,copyb               ; loop for 32 lines
+        rts 
 
 
 get_time_addresses:
@@ -505,6 +545,7 @@ font_lookup: dc.l 0,1,8,9,16,17,24,25,32,33,40,41,48,49,56,57,64,65,72,73,80,81,
 
 character:      dc.l 26
 
+base_screen: dc.l $0
 addr_minute_digit0:  dc.l    $0
 addr_minute_digit1:  dc.l    $0
 addr_second_digit0:  dc.l    $0
