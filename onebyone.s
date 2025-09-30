@@ -28,7 +28,13 @@ W_PALETTE_15: equ PALETTE_BASE+30
 BORDER_COLOUR_0: equ $265
 BORDER_COLOUR_1: equ $167
 BORDER_COLOUR_2: equ $373
-BORDER_COLOUR_3: equ $070
+BORDER_COLOUR_3: equ $314
+
+
+;BORDER_COLOUR_0: equ $265
+;BORDER_COLOUR_1: equ $167
+;BORDER_COLOUR_2: equ $373
+;BORDER_COLOUR_3: equ $070
 
 LOGO_COLOUR_0: equ $256
 LOGO_COLOUR_1: equ $545
@@ -52,7 +58,7 @@ LOGO_C2: equ W_PALETTE_12
 
         section text
 ;................................................................
-        jsr disable_mouse
+        
         move.l  4(sp),a5                ; address to basepage
         move.l  $0c(a5),d0              ; length of text segment
         add.l   $14(a5),d0              ; length of data segment
@@ -78,6 +84,7 @@ LOGO_C2: equ W_PALETTE_12
         move.l  d0,oldusp               ; store old user stack pointer
 
         jsr initialise
+        jsr disable_mouse
 
         ;force 50hz mode!
         move.b    #2,$FFFF820A
@@ -113,13 +120,10 @@ frame:
         ;addq.l  #2,sp                   ;
 
 exit:
-        jsr     MUSIC+4                 ; de-init music
-
-        move.l  oldvbl,$70.w            ; restore VBL
-
-        jsr restore
-
         jsr enable_mouse
+        jsr     MUSIC+4                 ; de-init music
+        move.l  oldvbl,$70.w            ; restore VBL
+        jsr restore
 
         move.l  oldusp(pc),-(sp)        ; user mode
         move.w  #$20,-(sp)              ;
@@ -576,10 +580,29 @@ disable_mouse:
         move.w  #25,-(a7)               ; send instruction to IKBD
         trap    #14
         addq.l  #8,a7
+
+    
+
+        ;move.l  #731,d0 
+        ;move.l  d0,255
+
+    ;     move.l  #$1a,-(a7) ; pointer to IKBD instruction
+     ;   move.w  #0,-(a7)  ; length of instruction - 1
+      ;  move.w  #25,-(a7)               ; send instruction to IKBD
+       ; trap    #14
+        ;addq.l  #8,a7
         rts
 
 enable_mouse:
-        move.l  #mus_on,-(a7) ; pointer to IKBD instruction
+     
+
+   ;      move.l  #$00,-(a7) ; pointer to IKBD instruction
+  ;      move.w  #0,-(a7)  ; length of instruction - 1
+ ;       move.w  #25,-(a7)               ; send instruction to IKBD
+       ; trap    #14
+;        addq.l  #8,a7
+
+           move.l  #mus_on,-(a7) ; pointer to IKBD instruction
         move.w  #0,-(a7)  ; length of instruction - 1
         move.w  #25,-(a7)               ; send instruction to IKBD
         trap    #14
@@ -590,6 +613,9 @@ enable_mouse:
 
 mus_off: dc.b    $12
 mus_on: dc.b    $08
+ikbd_vec        dc.l    0
+old_joy:        dc.l    0 
+
 
 oldvbl: ds.l    1
 oldusp: ds.l    1
