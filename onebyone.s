@@ -81,7 +81,7 @@ LOGO_C2: equ W_PALETTE_12
 
         jsr draw_img
 
-        jsr copy_block
+        ;jsr copy_block
 
         jsr get_time_addresses
 
@@ -131,10 +131,25 @@ vbl:
         ;add.w   #-70,$ff8240
         jsr     MUSIC+8                 ; call music
 
+
+
         ;jsr     write_character
         ;store d0-d7
         movem.l d0-d7,store_d0d7
         movem.l a0-a7,store_a0a7
+
+
+        ;check for demo sync
+        move.b MUSIC+$B8,d0
+       ; move.b d0,$ff8240
+        ;move.l d0,$ff8240
+        cmp.b  #$44,d0
+        bne nosyncmsx 
+
+        add.l #$a0,$ff8240
+nosyncmsx:
+
+   
 
 ;----------------------------------------------------------------
         ;time check - tick every 50 frames (1 second)
@@ -148,7 +163,7 @@ vbl:
         cmpi.l  #10+26,d0
         bne noreset_second_digit1
         move.l  #26,d0
-        addq.l  #1,can_inc_seconds_digit0
+        addq.b  #1,can_inc_seconds_digit0
 noreset_second_digit1:
         move.l  d0,character
         move.l  d0,elapsed_seconds_digit1
@@ -159,15 +174,15 @@ nosecond:
         move.w  d0,time_frame
 
         ;every 10 seconds increment second_digit_0
-        move.l  can_inc_seconds_digit0,d0
+        move.b  can_inc_seconds_digit0,d0
         beq     noinc_second_digit0
-        clr.l   can_inc_seconds_digit0
+        clr.b   can_inc_seconds_digit0
         move.l  elapsed_seconds_digit0,d0 
         addi.l   #1,d0 
         ;;addq.l  #1,elapsed_seconds_digit0
         cmpi.l  #6+26,d0 
         bne     noreset_second_digit0
-        addq.l  #1,can_inc_minutes_digit1
+        addq.b  #1,can_inc_minutes_digit1
         move.l  #26,d0 
 noreset_second_digit0: 
         move.l  d0,elapsed_seconds_digit0
@@ -177,9 +192,9 @@ noreset_second_digit0:
 noinc_second_digit0:
 
         ;every 59 seconds increment minute_digit_1 
-        move.l  can_inc_minutes_digit1,d0 
+        move.b  can_inc_minutes_digit1,d0 
         beq     no_inc_minute_digit_1
-        clr.l   can_inc_minutes_digit1
+        clr.b   can_inc_minutes_digit1
         move.l  elapsed_minutes_digit1,d0 
         addi.l  #1,d0 
         cmpi.l  #10+26,d0 
@@ -208,6 +223,8 @@ nocycle_logo:
         move.w  d0,time_colour_cycle_logo
 ;----------------------------------------------------------------   
 
+
+        ;move.b d0,$ff8240
 
       ;; add.l #$a0,$ff8240
         addi.l  #1,global_timect
@@ -360,8 +377,6 @@ f0l:
         move.w  #LOGO_COLOUR_0,LOGO_C0
         move.w  #LOGO_COLOUR_1,LOGO_C1 
         move.w  #LOGO_COLOUR_2,LOGO_C2 
-
-
         rts 
 f1l:
         cmp.w   #2,d0 
@@ -372,8 +387,6 @@ f1l:
 
         rts
 f2l:
-   
-
         move.w  #LOGO_COLOUR_2,LOGO_C0
         move.w  #LOGO_COLOUR_0,LOGO_C1 
         move.w  #LOGO_COLOUR_1,LOGO_C2 
@@ -546,21 +559,18 @@ font_lookup: dc.l 0,1,8,9,16,17,24,25,32,33,40,41,48,49,56,57,64,65,72,73,80,81,
 character:      dc.l 26
 
 base_screen: dc.l $0
+
 addr_minute_digit0:  dc.l    $0
 addr_minute_digit1:  dc.l    $0
 addr_second_digit0:  dc.l    $0
 addr_second_digit1:  dc.l    $0
 
-can_inc_seconds_digit0: dc.l $0
-can_inc_minutes_digit1: dc.l $0
+can_inc_seconds_digit0: dc.b $0
+can_inc_minutes_digit1: dc.b $0
 
-
-elapsed_minutes_digit0:        dc.l   26 
 elapsed_minutes_digit1:        dc.l   26
 
 elapsed_seconds_digit0:        dc.l   26      ;26 is character "0"
 elapsed_seconds_digit1:        dc.l   26      ;26 is character "0"
-
-elapsed_minutes:        dc.l   26
 
 global_timect:          dc.l    0
