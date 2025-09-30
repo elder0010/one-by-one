@@ -25,10 +25,10 @@ W_PALETTE_13: equ PALETTE_BASE+26
 W_PALETTE_14: equ PALETTE_BASE+28
 W_PALETTE_15: equ PALETTE_BASE+30
 
-BORDER_COLOUR_0: equ $245
-BORDER_COLOUR_1: equ $262
-BORDER_COLOUR_2: equ $454
-BORDER_COLOUR_3: equ $447
+BORDER_COLOUR_0: equ $265
+BORDER_COLOUR_1: equ $167
+BORDER_COLOUR_2: equ $373
+BORDER_COLOUR_3: equ $070
 
 LOGO_COLOUR_0: equ $256
 LOGO_COLOUR_1: equ $545
@@ -79,9 +79,12 @@ LOGO_C2: equ W_PALETTE_12
 
         jsr initialise
 
+        ;force 50hz mode!
+        move.b    #2,$FFFF820A
+
         jsr draw_img
 
-        ;jsr copy_block
+       ; jsr copy_block
 
         jsr get_time_addresses
 
@@ -143,10 +146,15 @@ vbl:
         move.b MUSIC+$B8,d0
        ; move.b d0,$ff8240
         ;move.l d0,$ff8240
-        cmp.b  #$44,d0
+        cmp.b  #$01,d0
         bne nosyncmsx 
 
-        add.l #$a0,$ff8240
+        move.l  must_fade_blocks,d0 
+        beq     nosyncmsx
+        move.l  #01,d0 
+        move.l  d0,block_status
+
+        ;add.l #$a0,$ff8240
 nosyncmsx:
 
    
@@ -222,8 +230,24 @@ nocycle_border:
 nocycle_logo:
         move.w  d0,time_colour_cycle_logo
 ;----------------------------------------------------------------   
+        ;blocks logic 
+
+        move.l  block_status,d0 
+        cmp     #0,d0 
+        beq     block_end
+        cmp     #1,d0 
+        bne     block_wait
+block_draw:
+        jsr     copy_block
+        jmp     block_end
+block_wait:
+        cmp     #2,d0
+        bne     block_end
+        jsr     delay_block
+block_end:
 
 
+        ;jsr copy_block
         ;move.b d0,$ff8240
 
       ;; add.l #$a0,$ff8240
@@ -308,10 +332,12 @@ draw_img:
         move.l  d0,a0          ;put phybase in a0
         move.l  d0,base_screen ;store it
         move.l  #picture+34,a1 ;a1 points to picture
+        move.l  #picture_clean,a2 
 
         move.l  #7999,d0
 draw_loop:
-        move.l  (a1)+,(a0)+     ;move one longword to screen (draw the image)
+        move.l  (a1),(a0)+     ;move one longword to screen (draw the image)
+        move.l  (a1)+,(a2)+
         dbf     d0,draw_loop  
         rts
 
@@ -449,11 +475,27 @@ write_character:
 copy_block:
         move.l  #character,a0           ; points to character
         move.l  #charset+34,a1          ; points to pixel start
+       ; move.b  (a0),d0                 ; put letter ascii value in d0
 
-        move.b  (a0),d0                 ; put letter ascii value in d0
+        ;d2=x,d1=y (0,0 is top left)
+        move.l  #block_pt,a2 
+        move.l  (a2),d3   
+        mulu    #4,d3 ;it's a longword!
 
-        move.w  #2,d1  
-        move.w  #0,d2 
+
+        ;init d1 and d2 
+        move.l  #block_x,a2 
+        add.l   d3,a2 
+        move.l  (a2),d2
+
+        move.l  #block_y,a2 
+        add.l   d3,a2 
+        move.l  (a2),d1 
+
+   
+        ;move.w  #2,d1  
+        ;move.w  #0,d2 
+
         mulu    #8,d2                   ; 8 bytes for each 16x16 block
         mulu    #16,d1                  ; 16 lines per row
         mulu    #160,d1               ; 160 bytes per screen line
@@ -482,6 +524,30 @@ copyb:
         add.l   #160,a3
         add.l   #160,a0 
         dbf     d0,copyb               ; loop for 32 lines
+
+        move.l  #02,d0 
+        move.l  d0,block_status
+        rts 
+
+delay_block:
+        move.l  block_delay_ct,d0 
+        addi.l  #-1,d0 
+        move.l  d0,block_delay_ct
+        bne     noincblock
+
+        move.l  #31,d0 
+        move.l  d0,block_delay_ct 
+
+        move.l  #01,d0 
+        move.l  d0,block_status
+
+        addi.l  #1,block_pt 
+        move.l  block_pt,d0 
+        cmp.l   #23,d0 
+        bne     noincblock
+        clr.l   block_status
+        clr.l   must_fade_blocks
+noincblock:
         rts 
 
 
@@ -574,3 +640,18 @@ elapsed_seconds_digit0:        dc.l   26      ;26 is character "0"
 elapsed_seconds_digit1:        dc.l   26      ;26 is character "0"
 
 global_timect:          dc.l    0
+;................................................................
+
+block_status:          dc.l 0
+
+block_x:        dc.l 04,07,00,12,08,18,09,03,01,07,15,17,12,14,03,16,02,18,19,00,14,02,02
+
+block_y:        dc.l 02,07,02,02,07,07,05,07,04,02,04,02,08,05,05,04,06,05,03,05,02,06,13
+
+block_pt:       dc.l 0
+
+block_delay_ct: dc.l 31
+
+must_fade_blocks: dc.l 1 
+
+picture_clean:   incbin  data\logo_multi.pi1
