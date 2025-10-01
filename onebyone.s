@@ -53,6 +53,14 @@ BORDER_C3: equ W_PALETTE_11
 LOGO_C0: equ W_PALETTE_07
 LOGO_C1: equ W_PALETTE_11
 LOGO_C2: equ W_PALETTE_12
+
+
+LOGO_FLASH_COL0: equ W_PALETTE_05
+LOGO_FLASH_COL1: equ W_PALETTE_07
+
+
+
+
 ;LOGO_C3: equ W_PALETTE_13 
 
 
@@ -102,6 +110,14 @@ LOGO_C2: equ W_PALETTE_12
 
         jsr draw_img
 
+        ;back up logo colours for flashing
+        move.l  LOGO_FLASH_COL0,d0 
+        move.l  d0,logo_col0
+
+        move.l  LOGO_FLASH_COL1,d0 
+        move.l  d0,logo_col1
+        
+
         ;init timer to 00:00
         move.l  addr_minute_digit0,a0 
         jsr write_character
@@ -144,8 +160,6 @@ vbl:
         ;add.w   #-70,$ff8240
         jsr     MUSIC+8                 ; call music
 
-
-
         ;jsr     write_character
         ;store d0-d7
         movem.l d0-d7,store_d0d7
@@ -166,8 +180,6 @@ vbl:
 
         ;add.l #$a0,$ff8240
 nosyncmsx:
-
-   
 
 ;----------------------------------------------------------------
         ;time check - tick every 50 frames (1 second)
@@ -231,8 +243,6 @@ no_inc_minute_digit_1:
         move.w  #4,d0 
 nocycle_border:
         move.w  d0,time_colour_cycle_border
-
-
         move.w  time_colour_cycle_logo,d0 
         dbf     d0,nocycle_logo
       ;  bsr     cycle_colours_logo
@@ -241,7 +251,6 @@ nocycle_logo:
         move.w  d0,time_colour_cycle_logo
 ;----------------------------------------------------------------   
         ;blocks logic 
-
         move.l  block_status,d0 
         cmp     #0,d0 
         beq     block_end
@@ -257,6 +266,12 @@ block_wait:
 block_end:
 
 
+        ;jsr flash_logo
+
+        
+        
+        
+        
         ;jsr copy_block
         ;move.b d0,$ff8240
 
@@ -400,34 +415,52 @@ f3:
         rts
 
 
-cycle_colours_logo:
-        ;movem.l picture+2,d0-d7 ;put picture palette in d0-d7
-        ;movem.l d0-d7,PALETTE_BASE
+;cycle_colours_logo:
+;        ;movem.l picture+2,d0-d7 ;put picture palette in d0-d7
+;        ;movem.l d0-d7,PALETTE_BASE
+;
+;        move.w  frame_colour_cycle_logo,d0
+;        addq.w  #1,d0 
+;        move.w  d0,frame_colour_cycle_logo
+;        cmp.w   #1,d0
+;        bne     f1l
+;f0l: 
+;        move.w  #LOGO_COLOUR_0,LOGO_C0
+;        move.w  #LOGO_COLOUR_1,LOGO_C1 
+;        move.w  #LOGO_COLOUR_2,LOGO_C2 
+;        rts 
+;f1l:
+;        cmp.w   #2,d0 
+;        bne     f2l
+;        move.w  #LOGO_COLOUR_1,LOGO_C0
+;        move.w  #LOGO_COLOUR_2,LOGO_C1 
+;        move.w  #LOGO_COLOUR_0,LOGO_C2 
+;
+;        rts
+;f2l:
+;        move.w  #LOGO_COLOUR_2,LOGO_C0
+;        move.w  #LOGO_COLOUR_0,LOGO_C1 
+;        move.w  #LOGO_COLOUR_1,LOGO_C2 
+;
+;        clr.w   frame_colour_cycle_logo
+;        rts
 
-        move.w  frame_colour_cycle_logo,d0
-        addq.w  #1,d0 
-        move.w  d0,frame_colour_cycle_logo
-        cmp.w   #1,d0
-        bne     f1l
-f0l: 
-        move.w  #LOGO_COLOUR_0,LOGO_C0
-        move.w  #LOGO_COLOUR_1,LOGO_C1 
-        move.w  #LOGO_COLOUR_2,LOGO_C2 
-        rts 
-f1l:
-        cmp.w   #2,d0 
-        bne     f2l
-        move.w  #LOGO_COLOUR_1,LOGO_C0
-        move.w  #LOGO_COLOUR_2,LOGO_C1 
-        move.w  #LOGO_COLOUR_0,LOGO_C2 
+flash_logo: 
+   
+        move.l  logo_fade_pt,d0 
+        mulu    #4,d0 
+        move.l  #logo_fade_col0,a0 
+        add.l   d0,a0 
 
-        rts
-f2l:
-        move.w  #LOGO_COLOUR_2,LOGO_C0
-        move.w  #LOGO_COLOUR_0,LOGO_C1 
-        move.w  #LOGO_COLOUR_1,LOGO_C2 
-
-        clr.w   frame_colour_cycle_logo
+        move.l  (a0),d0
+        move.l  #LOGO_FLASH_COL0,a1 
+        move.l  d0,(a1)
+        ;LOGO_FLASH_COL0 
+        
+        move.l  logo_fade_pt,d0 
+        addq.l  #1,d0 
+        and.l   #7,d0 
+        move.l  d0,logo_fade_pt
         rts
 
 ;a0 = target of the write
@@ -665,3 +698,12 @@ block_delay_ct: dc.l 28
 must_fade_blocks: dc.l 1 
 
 picture_clean:   incbin  data\logo_multi.pi1
+
+;................................................................
+
+logo_col0:      dc.l $0
+logo_col1:      dc.l $0
+
+logo_fade_col0: dc.l $777,$767,$766,$666,$656,$556,$555,$455
+
+logo_fade_pt: dc.l $0
