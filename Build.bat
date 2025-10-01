@@ -15,7 +15,7 @@ REM %VASM% pixel.s -Ftos -o PIXEL.TOS
 REM %VASM% scroller.s -Ftos -o SCROLLER.TOS
 REM %VASM% scroller8.s -Ftos -o SCRX.TOS
 
-%VASM% onebyone.s -Ftos -tos-flags=3 -o ONEBYONE.TOS
+%VASM% onebyone.s -Ftos -tos-flags=3 -o ONEBYONE.PRG
 
 copy .\MAIN.TOS %EMU_DIR%\
-copy .\ONEBYONE.TOS %EMU_DIR%\
+copy .\ONEBYONE.PRG %EMU_DIR%\

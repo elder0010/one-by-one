@@ -82,18 +82,25 @@ LOGO_C2: equ W_PALETTE_12
         trap    #1                      ;
         addq.l  #6,sp                   ;
         move.l  d0,oldusp               ; store old user stack pointer
+        
+        jsr disable_mouse
+        
+        ;disable system bell
+        bclr.b #0,$484.w
 
         jsr initialise
-        jsr disable_mouse
-
-        ;force 50hz mode!
-        move.b    #2,$FFFF820A
-
-        jsr draw_img
-
-       ; jsr copy_block
+        
+        ;force 50hz mode
+        move.b  #2,$ffff820a
 
         jsr get_time_addresses
+
+        move.l  $70.w,oldvbl            ; store old VBL
+        move.l  #vbl,$70.w              ; steal VBL
+
+        jsr     MUSIC+0                 ; init music
+
+        jsr draw_img
 
         ;init timer to 00:00
         move.l  addr_minute_digit0,a0 
@@ -104,13 +111,9 @@ LOGO_C2: equ W_PALETTE_12
         jsr write_character
         move.l  addr_second_digit1,a0 
         jsr write_character
-        
-        move.l  $70.w,oldvbl            ; store old VBL
-        move.l  #vbl,$70.w              ; steal VBL
 
-        jsr     MUSIC+0                 ; init music
 frame:
-        cmp.l   #50*60*3+18*50,global_timect
+        cmp.l   #50*60*3+16*50,global_timect
         beq     exit 
 
         cmp.b   #$39,$fffc02   ;space pressed?
@@ -120,6 +123,9 @@ frame:
         ;addq.l  #2,sp                   ;
 
 exit:
+        ;restore system bell (CONTERM)
+        bset.b #0,$484.w
+
         jsr enable_mouse
         jsr     MUSIC+4                 ; de-init music
         move.l  oldvbl,$70.w            ; restore VBL
@@ -539,7 +545,7 @@ delay_block:
         move.l  d0,block_delay_ct
         bne     noincblock
 
-        move.l  #31,d0 
+        move.l  #28,d0 
         move.l  d0,block_delay_ct 
 
         move.l  #01,d0 
@@ -580,29 +586,10 @@ disable_mouse:
         move.w  #25,-(a7)               ; send instruction to IKBD
         trap    #14
         addq.l  #8,a7
-
-    
-
-        ;move.l  #731,d0 
-        ;move.l  d0,255
-
-    ;     move.l  #$1a,-(a7) ; pointer to IKBD instruction
-     ;   move.w  #0,-(a7)  ; length of instruction - 1
-      ;  move.w  #25,-(a7)               ; send instruction to IKBD
-       ; trap    #14
-        ;addq.l  #8,a7
         rts
 
 enable_mouse:
-     
-
-   ;      move.l  #$00,-(a7) ; pointer to IKBD instruction
-  ;      move.w  #0,-(a7)  ; length of instruction - 1
- ;       move.w  #25,-(a7)               ; send instruction to IKBD
-       ; trap    #14
-;        addq.l  #8,a7
-
-           move.l  #mus_on,-(a7) ; pointer to IKBD instruction
+        move.l  #mus_on,-(a7) ; pointer to IKBD instruction
         move.w  #0,-(a7)  ; length of instruction - 1
         move.w  #25,-(a7)               ; send instruction to IKBD
         trap    #14
@@ -613,9 +600,6 @@ enable_mouse:
 
 mus_off: dc.b    $12
 mus_on: dc.b    $08
-ikbd_vec        dc.l    0
-old_joy:        dc.l    0 
-
 
 oldvbl: ds.l    1
 oldusp: ds.l    1
@@ -676,7 +660,7 @@ block_y:        dc.l 02,07,02,02,07,07,05,07,04,02,04,02,08,05,05,04,06,05,03,05
 
 block_pt:       dc.l 0
 
-block_delay_ct: dc.l 31
+block_delay_ct: dc.l 28
 
 must_fade_blocks: dc.l 1 
 
