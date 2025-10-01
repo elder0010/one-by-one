@@ -1,12 +1,3 @@
-;
-;       VBL replayer for unpacked SNDH files
-;       Special example for Tobe and Gloky/MJJ
-;
-;       Depending on your tune - all timers now free ;)
-;
-;       gwEm 2005, 2006, 2013, 2019, 2020, 2021, 2024
-;
-
 PALETTE_BASE: equ $ff8240
 W_PALETTE_00: equ PALETTE_BASE+0
 W_PALETTE_01: equ PALETTE_BASE+2
@@ -30,16 +21,6 @@ BORDER_COLOUR_1: equ $167
 BORDER_COLOUR_2: equ $373
 BORDER_COLOUR_3: equ $314
 
-
-;BORDER_COLOUR_0: equ $265
-;BORDER_COLOUR_1: equ $167
-;BORDER_COLOUR_2: equ $373
-;BORDER_COLOUR_3: equ $070
-
-LOGO_COLOUR_0: equ $256
-LOGO_COLOUR_1: equ $545
-LOGO_COLOUR_2: equ $046
-
 ;Colour palette mappings
 ;0 - 03
 ;1 - 02
@@ -54,15 +35,7 @@ LOGO_C0: equ W_PALETTE_07
 LOGO_C1: equ W_PALETTE_11
 LOGO_C2: equ W_PALETTE_12
 
-
-LOGO_FLASH_COL0: equ W_PALETTE_05
-LOGO_FLASH_COL1: equ W_PALETTE_07
-
-
-
-
-;LOGO_C3: equ W_PALETTE_13 
-
+LOGO_FLASH_COL0: equ W_PALETTE_06
 
         section text
 ;................................................................
@@ -111,12 +84,8 @@ LOGO_FLASH_COL1: equ W_PALETTE_07
         jsr draw_img
 
         ;back up logo colours for flashing
-        move.l  LOGO_FLASH_COL0,d0 
-        move.l  d0,logo_col0
-
-        move.l  LOGO_FLASH_COL1,d0 
-        move.l  d0,logo_col1
-        
+        move.w  LOGO_FLASH_COL0,d0 
+        move.w  d0,logo_col0
 
         ;init timer to 00:00
         move.l  addr_minute_digit0,a0 
@@ -165,22 +134,16 @@ vbl:
         movem.l d0-d7,store_d0d7
         movem.l a0-a7,store_a0a7
 
-
         ;check for demo sync
         move.b MUSIC+$B8,d0
-       ; move.b d0,$ff8240
-        ;move.l d0,$ff8240
         cmp.b  #$01,d0
         bne nosyncmsx 
-
         move.l  must_fade_blocks,d0 
         beq     nosyncmsx
         move.l  #01,d0 
         move.l  d0,block_status
-
         ;add.l #$a0,$ff8240
 nosyncmsx:
-
 ;----------------------------------------------------------------
         ;time check - tick every 50 frames (1 second)
         move.w  time_frame,d0 
@@ -265,19 +228,30 @@ block_wait:
         jsr     delay_block
 block_end:
 
+;-----------------------------------------------------------------
+        ;logo flash 
+        ;flash enabled?
+        ;check for demo sync
+        move.b MUSIC+$B8,d0
+        cmp.b  #$02,d0
+        bne skipstartflash
+        move.b  #1,d0 
+        move.b  d0,logo_flash_enabled
+skipstartflash:
 
-        ;jsr flash_logo
+        ;flash disabled?
+        ;check for demo sync
+        move.b MUSIC+$B8,d0
+        cmp.b  #$03,d0
+        bne skipstopflash
+        clr.b   logo_flash_enabled
+skipstopflash:
 
-        
-        
-        
-        
-        ;jsr copy_block
-        ;move.b d0,$ff8240
-
-      ;; add.l #$a0,$ff8240
+        move.b  logo_flash_enabled,d0 
+        beq     skipflash
+        jsr flash_logo
+skipflash:
         addi.l  #1,global_timect
-
 
         ;restore d0-d7
         movem.l store_d0d7,d0-d7
@@ -405,48 +379,30 @@ f2:
         move.w  #BORDER_COLOUR_1,BORDER_C3
         rts
 f3:
-
         move.w  #BORDER_COLOUR_3,BORDER_C0
         move.w  #BORDER_COLOUR_0,BORDER_C1 
         move.w  #BORDER_COLOUR_1,BORDER_C2 
         move.w  #BORDER_COLOUR_2,BORDER_C3
-
         clr.w   frame_colour_cycle_border
         rts
 
-
-;cycle_colours_logo:
-;        ;movem.l picture+2,d0-d7 ;put picture palette in d0-d7
-;        ;movem.l d0-d7,PALETTE_BASE
-;
-;        move.w  frame_colour_cycle_logo,d0
-;        addq.w  #1,d0 
-;        move.w  d0,frame_colour_cycle_logo
-;        cmp.w   #1,d0
-;        bne     f1l
-;f0l: 
-;        move.w  #LOGO_COLOUR_0,LOGO_C0
-;        move.w  #LOGO_COLOUR_1,LOGO_C1 
-;        move.w  #LOGO_COLOUR_2,LOGO_C2 
-;        rts 
-;f1l:
-;        cmp.w   #2,d0 
-;        bne     f2l
-;        move.w  #LOGO_COLOUR_1,LOGO_C0
-;        move.w  #LOGO_COLOUR_2,LOGO_C1 
-;        move.w  #LOGO_COLOUR_0,LOGO_C2 
-;
-;        rts
-;f2l:
-;        move.w  #LOGO_COLOUR_2,LOGO_C0
-;        move.w  #LOGO_COLOUR_0,LOGO_C1 
-;        move.w  #LOGO_COLOUR_1,LOGO_C2 
-;
-;        clr.w   frame_colour_cycle_logo
-;        rts
-
 flash_logo: 
-   
+        move.b  logo_is_fading,d0 
+        bne     goflash 
+
+        move.b  logo_fade_delay,d0 
+        addq.b  #1,d0 
+        move.b  d0,logo_fade_delay
+        cmp.b   #13,d0 
+        beq     goflash 
+        rts
+
+goflash:        
+        move.b  #1,d0 
+        move.b  d0,logo_is_fading 
+
+        clr.b   logo_fade_delay
+
         move.l  logo_fade_pt,d0 
         mulu    #4,d0 
         move.l  #logo_fade_col0,a0 
@@ -454,22 +410,23 @@ flash_logo:
 
         move.l  (a0),d0
         move.l  #LOGO_FLASH_COL0,a1 
-        move.l  d0,(a1)
-        ;LOGO_FLASH_COL0 
+        move.w  d0,(a1)
         
         move.l  logo_fade_pt,d0 
         addq.l  #1,d0 
         and.l   #7,d0 
         move.l  d0,logo_fade_pt
+        bne     continue_fade 
+        clr.b   logo_is_fading
+        move.w  logo_col0,d0 
+        move.l  #LOGO_FLASH_COL0,a0 
+        move.w  d0,(a0)
+continue_fade:
         rts
 
 ;a0 = target of the write
 ;character = char to write
 write_character:
-        ;move.l  minute_digit0,a0
-
-       ; add.l   #8,a0 
-    
         move.l  #charset+34,a3  ;points to charset start
 
         move.l  #font_lookup,a1 
@@ -525,7 +482,6 @@ copy_block:
         move.l  (a2),d3   
         mulu    #4,d3 ;it's a longword!
 
-
         ;init d1 and d2 
         move.l  #block_x,a2 
         add.l   d3,a2 
@@ -534,10 +490,6 @@ copy_block:
         move.l  #block_y,a2 
         add.l   d3,a2 
         move.l  (a2),d1 
-
-   
-        ;move.w  #2,d1  
-        ;move.w  #0,d2 
 
         mulu    #8,d2                   ; 8 bytes for each 16x16 block
         mulu    #16,d1                  ; 16 lines per row
@@ -592,7 +544,6 @@ delay_block:
         clr.l   must_fade_blocks
 noincblock:
         rts 
-
 
 get_time_addresses:
         move.w  #2,-(a7)                ;get phybase
@@ -700,10 +651,14 @@ must_fade_blocks: dc.l 1
 picture_clean:   incbin  data\logo_multi.pi1
 
 ;................................................................
-
-logo_col0:      dc.l $0
-logo_col1:      dc.l $0
+logo_col0:      dc.w $0
 
 logo_fade_col0: dc.l $777,$767,$766,$666,$656,$556,$555,$455
 
 logo_fade_pt: dc.l $0
+
+logo_fade_delay: dc.b $0
+
+logo_is_fading: dc.b $0
+
+logo_flash_enabled: dc.b $0
