@@ -538,7 +538,7 @@ delay_block:
 
         addi.l  #1,block_pt 
         move.l  block_pt,d0 
-        cmp.l   #23,d0 
+        cmp.l   #22,d0 
         bne     noincblock
         clr.l   block_status
         clr.l   must_fade_blocks
