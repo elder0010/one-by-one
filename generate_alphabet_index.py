@@ -3,12 +3,8 @@ base = 0
 
 tk = 0
 for i in range(0,37):
-   
     res.append(base)
-    
     res.append(base+1)
-
-
     base += 8
   
 

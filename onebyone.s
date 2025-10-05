@@ -31,10 +31,6 @@ BORDER_C1: equ W_PALETTE_07
 BORDER_C2: equ W_PALETTE_08
 BORDER_C3: equ W_PALETTE_11 
 
-LOGO_C0: equ W_PALETTE_07
-LOGO_C1: equ W_PALETTE_11
-LOGO_C2: equ W_PALETTE_12
-
 LOGO_FLASH_COL0: equ W_PALETTE_06
 
         section text
@@ -148,7 +144,6 @@ nosyncmsx:
         ;time check - tick every 50 frames (1 second)
         move.w  time_frame,d0 
         dbf     d0,nosecond
-        ;https://nguillaumin.github.io/perihelion-m68k-tutorials/_on_fading_to_black.html
         
         ;every second increment second_digit_1
         move.l  elapsed_seconds_digit1,d0 
